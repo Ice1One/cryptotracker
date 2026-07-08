@@ -49,7 +49,7 @@ async def fetch_prices(coin_ids: list[str]) -> dict:
         response = await client.get(url)
         return response.json()
 
-# Background task — оновлює ціни кожні 5 хвилин
+# Background task
 async def update_prices():
     db = SessionLocal()
     try:
@@ -71,8 +71,49 @@ async def update_prices():
     finally:
         db.close()
 
+TOP_20_COINS = [
+    {"id": "bitcoin", "symbol": "BTC", "name": "Bitcoin"},
+    {"id": "ethereum", "symbol": "ETH", "name": "Ethereum"},
+    {"id": "tether", "symbol": "USDT", "name": "Tether"},
+    {"id": "binancecoin", "symbol": "BNB", "name": "BNB"},
+    {"id": "solana", "symbol": "SOL", "name": "Solana"},
+    {"id": "usd-coin", "symbol": "USDC", "name": "USD Coin"},
+    {"id": "ripple", "symbol": "XRP", "name": "XRP"},
+    {"id": "dogecoin", "symbol": "DOGE", "name": "Dogecoin"},
+    {"id": "toncoin", "symbol": "TON", "name": "Toncoin"},
+    {"id": "cardano", "symbol": "ADA", "name": "Cardano"},
+    {"id": "avalanche-2", "symbol": "AVAX", "name": "Avalanche"},
+    {"id": "shiba-inu", "symbol": "SHIB", "name": "Shiba Inu"},
+    {"id": "polkadot", "symbol": "DOT", "name": "Polkadot"},
+    {"id": "chainlink", "symbol": "LINK", "name": "Chainlink"},
+    {"id": "bitcoin-cash", "symbol": "BCH", "name": "Bitcoin Cash"},
+    {"id": "near", "symbol": "NEAR", "name": "NEAR Protocol"},
+    {"id": "matic-network", "symbol": "MATIC", "name": "Polygon"},
+    {"id": "litecoin", "symbol": "LTC", "name": "Litecoin"},
+    {"id": "internet-computer", "symbol": "ICP", "name": "Internet Computer"},
+    {"id": "uniswap", "symbol": "UNI", "name": "Uniswap"},
+]
+
 @app.on_event("startup")
 async def startup():
+    db = SessionLocal()
+    try:
+        for coin_data in TOP_20_COINS:
+            existing = db.query(TrackedCoin).filter(
+                TrackedCoin.coin_id == coin_data["id"]
+            ).first()
+            if not existing:
+                coin = TrackedCoin(
+                    coin_id=coin_data["id"],
+                    symbol=coin_data["symbol"],
+                    name=coin_data["name"]
+                )
+                db.add(coin)
+        db.commit()
+        print("✅ Top 20 coins initialized")
+    finally:
+        db.close()
+
     scheduler.add_job(update_prices, "interval", minutes=5)
     scheduler.start()
     await update_prices()
@@ -140,7 +181,6 @@ async def track_coin(coin_id: str, db: Session = Depends(get_db)):
     existing = db.query(TrackedCoin).filter(TrackedCoin.coin_id == coin_id).first()
     if existing:
         raise HTTPException(status_code=400, detail=f"Coin '{coin_id}' already tracked")
-    # Verify coin exists on CoinGecko
     async with httpx.AsyncClient() as client:
         response = await client.get(f"https://api.coingecko.com/api/v3/coins/{coin_id}")
         if response.status_code != 200:
