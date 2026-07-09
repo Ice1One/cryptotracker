@@ -46,7 +46,7 @@ Prometheus → Grafana
 - ☁️ **ECS Fargate** — serverless container orchestration
 - 🏗️ **IaC** — infrastructure as Terraform code
 - 📡 **Monitoring** — Prometheus metrics + Grafana dashboards
-- 🔒 **ECR** — private Docker image registry on AWS
+- 🔒 **Secrets Manager** — secure credentials storage
 - 🌐 **Elastic IP** — static public IP for EC2
 
 ---
@@ -82,6 +82,7 @@ Prometheus → Grafana
 | **Cloud** | AWS (ECS, ECR, RDS, ALB, VPC, IAM) |
 | **IaC** | Terraform |
 | **Monitoring** | Prometheus, Grafana |
+| **Security** | AWS Secrets Manager, VPC Endpoints |
 
 ---
 
@@ -102,7 +103,7 @@ Docs: `http://localhost:8000/docs`
 
 | Variable | Description |
 |----------|-------------|
-| `DATABASE_URL` | PostgreSQL connection string |
+| `DATABASE_URL` | PostgreSQL connection string or AWS Secrets Manager ARN |
 
 ---
 
@@ -116,6 +117,7 @@ VPC (devops-vpc) 10.0.0.0/16
 └── RDS PostgreSQL
 
 **AWS Services:**
+
 | Service | Purpose |
 |---------|---------|
 | **ECR** | Private Docker image registry |
@@ -125,7 +127,7 @@ VPC (devops-vpc) 10.0.0.0/16
 | **VPC** | Isolated network |
 | **IAM** | Access management |
 | **Elastic IP** | Static public IP |
-| **Secrets Manager** | Secure storage for database credentials |
+| **Secrets Manager** | Secure credentials storage |
 | **VPC Endpoints** | Private connectivity to AWS services |
 
 ```bash
@@ -140,6 +142,8 @@ terraform apply
 
 git push → GitHub Actions
 ↓
+Run pytest tests
+↓
 Build Docker image
 ↓
 Push to AWS ECR
@@ -149,13 +153,6 @@ Deploy to ECS Fargate
 Zero-downtime deployment
 
 ---
-
-## 📊 Monitoring
-
-| Tool | Purpose | Port |
-|------|---------|------|
-| Prometheus | Metrics collection | 9090 |
-| Grafana | Visualization | 3000 |
 
 ## 🔒 Security
 
@@ -167,6 +164,14 @@ Zero-downtime deployment
 - **IAM Roles** — least privilege access for ECS tasks
 - **Private Subnets** — RDS database not exposed to internet
 
+---
+
+## 📊 Monitoring
+
+| Tool | Purpose | Port |
+|------|---------|------|
+| Prometheus | Metrics collection | 9090 |
+| Grafana | Visualization | 3000 |
 
 **Dashboards:**
 - 📈 Total HTTP Requests
@@ -212,8 +217,8 @@ docker compose -f monitoring-compose.yml up -d
 
 ## 👨‍💻 Author
 
+**Ice1One** — Junior DevOps Engineer
 GitHub: [@Ice1One](https://github.com/Ice1One)
 
 ---
-
 
