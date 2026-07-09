@@ -6,15 +6,17 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.139-green?style=flat-square&logo=fastapi)
 ![Docker](https://img.shields.io/badge/Docker-ready-blue?style=flat-square&logo=docker)
 ![AWS](https://img.shields.io/badge/AWS-deployed-orange?style=flat-square&logo=amazonaws)
+![ECS](https://img.shields.io/badge/ECS-Fargate-orange?style=flat-square&logo=amazonaws)
 ![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub%20Actions-black?style=flat-square&logo=githubactions)
 ![Prometheus](https://img.shields.io/badge/Prometheus-monitoring-red?style=flat-square&logo=prometheus)
 ![Grafana](https://img.shields.io/badge/Grafana-dashboard-orange?style=flat-square&logo=grafana)
+![Terraform](https://img.shields.io/badge/Terraform-IaC-purple?style=flat-square&logo=terraform)
 
 ---
 
 ## 📌 Overview
 
-Crypto Price Tracker is a production-ready REST API that tracks real-time prices of top 20 cryptocurrencies using CoinGecko API. Built with a full DevOps pipeline — from local Docker development to AWS cloud deployment with Load Balancer, RDS PostgreSQL and Prometheus/Grafana monitoring.
+Crypto Price Tracker is a production-ready REST API that tracks real-time prices of top 20 cryptocurrencies using CoinGecko API. Built with a full DevOps pipeline — from local Docker development to AWS cloud deployment with ECS Fargate, Load Balancer, RDS PostgreSQL and Prometheus/Grafana monitoring.
 
 ---
 
@@ -24,26 +26,28 @@ Internet
 ↓
 AWS Application Load Balancer
 ↓
-EC2 (FastAPI + Docker)
+ECS Fargate (cryptotracker-service)
 ↓
 RDS PostgreSQL (price history)
 ↓
 CoinGecko API (real-time prices)
 ↓
-Prometheus (metrics) → Grafana (dashboards)
+Prometheus → Grafana
 
 ---
 
 ## 🚀 Features
 
 - 📈 **Real-time prices** — top 20 cryptocurrencies via CoinGecko API
-- 🔄 **Auto-update** — prices refresh every 5 minutes via background scheduler
+- 🔄 **Auto-update** — prices refresh every 5 minutes
 - 📊 **Price history** — stores historical data in PostgreSQL
 - 🐳 **Dockerized** — runs anywhere with Docker
 - ⚙️ **CI/CD** — auto build & deploy via GitHub Actions
-- ☁️ **AWS** — EC2 + RDS + Application Load Balancer
-- 🏗️ **IaC** — infrastructure described as Terraform code
+- ☁️ **ECS Fargate** — serverless container orchestration
+- 🏗️ **IaC** — infrastructure as Terraform code
 - 📡 **Monitoring** — Prometheus metrics + Grafana dashboards
+- 🔒 **ECR** — private Docker image registry on AWS
+- 🌐 **Elastic IP** — static public IP for EC2
 
 ---
 
@@ -72,8 +76,10 @@ Prometheus (metrics) → Grafana (dashboards)
 | **Scheduler** | APScheduler |
 | **HTTP Client** | httpx |
 | **Containerization** | Docker, Docker Compose |
+| **Image Registry** | AWS ECR |
+| **Orchestration** | AWS ECS Fargate |
 | **CI/CD** | GitHub Actions |
-| **Cloud** | AWS (EC2, RDS, ALB, VPC, IAM) |
+| **Cloud** | AWS (ECS, ECR, RDS, ALB, VPC, IAM) |
 | **IaC** | Terraform |
 | **Monitoring** | Prometheus, Grafana |
 
@@ -81,27 +87,22 @@ Prometheus (metrics) → Grafana (dashboards)
 
 ## 🐳 Local Development
 
-**Prerequisites:** Docker, Docker Compose
-
 ```bash
-# Clone repo
 git clone https://github.com/Ice1One/cryptotracker.git
 cd cryptotracker
-
-# Start with Docker Compose
 docker-compose up -d
-
-# API available at
-http://localhost:8000
 ```
+
+API: `http://localhost:8000`
+Docs: `http://localhost:8000/docs`
 
 ---
 
 ## 🔧 Environment Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host/db` |
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string |
 
 ---
 
@@ -110,16 +111,24 @@ http://localhost:8000
 VPC (devops-vpc) 10.0.0.0/16
 ├── Public Subnets (eu-central-1a/b/c)
 │   ├── Application Load Balancer
-│   └── EC2 (Docker + FastAPI)
+│   └── ECS Fargate (cryptotracker-service)
 └── Private Subnets (eu-central-1a/b/c)
 └── RDS PostgreSQL
 
-**Terraform** — all infrastructure is described as code in `/terraform` directory:
+**AWS Services:**
+| Service | Purpose |
+|---------|---------|
+| **ECR** | Private Docker image registry |
+| **ECS Fargate** | Serverless container orchestration |
+| **ALB** | Application Load Balancer |
+| **RDS PostgreSQL** | Managed database |
+| **VPC** | Isolated network |
+| **IAM** | Access management |
+| **Elastic IP** | Static public IP |
 
 ```bash
 cd terraform
 terraform init
-terraform plan
 terraform apply
 ```
 
@@ -131,42 +140,33 @@ git push → GitHub Actions
 ↓
 Build Docker image
 ↓
-Push to Docker Hub
+Push to AWS ECR
 ↓
-SSH to EC2
+Deploy to ECS Fargate
 ↓
-Pull & restart container
+Zero-downtime deployment
 
 ---
 
 ## 📊 Monitoring
 
-Real-time monitoring with **Prometheus** + **Grafana** stack.
-
-### Stack
-
 | Tool | Purpose | Port |
 |------|---------|------|
 | Prometheus | Metrics collection | 9090 |
-| Grafana | Visualization & Dashboards | 3000 |
+| Grafana | Visualization | 3000 |
 
-### Dashboards
-
-- 📈 **Total HTTP Requests** — requests count by endpoint
-- ⏱ **Average Response Time** — API response time
-- 🚀 **Requests per Second** — real-time load
-
-### Run Monitoring Stack
+**Dashboards:**
+- 📈 Total HTTP Requests
+- ⏱ Average Response Time
+- 🚀 Requests per Second
 
 ```bash
 docker compose -f monitoring-compose.yml up -d
 ```
 
-### Access
-
-- Grafana: `http://YOUR_EC2_IP:3000` (admin / admin123)
-- Prometheus: `http://YOUR_EC2_IP:9090`
-- Metrics endpoint: `GET /metrics`
+- Grafana: `http://EC2_IP:3000` (admin / admin123)
+- Prometheus: `http://EC2_IP:9090`
+- Metrics: `GET /metrics`
 
 ---
 
@@ -202,3 +202,5 @@ docker compose -f monitoring-compose.yml up -d
 GitHub: [@Ice1One](https://github.com/Ice1One)
 
 ---
+
+
