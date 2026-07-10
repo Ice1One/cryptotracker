@@ -11,22 +11,25 @@
 ![Prometheus](https://img.shields.io/badge/Prometheus-monitoring-red?style=flat-square&logo=prometheus)
 ![Grafana](https://img.shields.io/badge/Grafana-dashboard-orange?style=flat-square&logo=grafana)
 ![Terraform](https://img.shields.io/badge/Terraform-IaC-purple?style=flat-square&logo=terraform)
+![WAF](https://img.shields.io/badge/AWS_WAF-protected-red?style=flat-square&logo=amazonaws)
 
 ---
 
 ## 📌 Overview
 
-Crypto Price Tracker is a production-ready REST API that tracks real-time prices of top 20 cryptocurrencies using CoinGecko API. Built with a full DevOps pipeline — from local Docker development to AWS cloud deployment with ECS Fargate, Load Balancer, RDS PostgreSQL and Prometheus/Grafana monitoring.
+Crypto Price Tracker is a production-ready REST API that tracks real-time prices of top 20 cryptocurrencies using CoinGecko API. Built with a full DevOps pipeline — from local Docker development to AWS cloud deployment with ECS Fargate, Load Balancer, RDS PostgreSQL, Prometheus/Grafana monitoring, AWS WAF protection and Auto Scaling.
 
 ---
 
 ## 🏗️ Architecture
 
 Internet
+    ↓
+AWS WAF (DDoS, SQL injection protection)
 ↓
 AWS Application Load Balancer
 ↓
-ECS Fargate (cryptotracker-service)
+ECS Fargate (Auto Scaling 1-5 tasks)
 ↓
 RDS PostgreSQL (price history)
 ↓
@@ -42,12 +45,15 @@ Prometheus → Grafana
 - 🔄 **Auto-update** — prices refresh every 5 minutes
 - 📊 **Price history** — stores historical data in PostgreSQL
 - 🐳 **Dockerized** — runs anywhere with Docker
-- ⚙️ **CI/CD** — auto build & deploy via GitHub Actions
+- ⚙️ **CI/CD** — auto build & deploy via GitHub Actions + pytest
 - ☁️ **ECS Fargate** — serverless container orchestration
-- 🏗️ **IaC** — infrastructure as Terraform code
-- 📡 **Monitoring** — Prometheus metrics + Grafana dashboards
+- 📈 **Auto Scaling** — 1 to 5 tasks based on CPU utilization
+- 🛡️ **AWS WAF** — protection from DDoS, SQL injection, XSS
 - 🔒 **Secrets Manager** — secure credentials storage
-- 🌐 **Elastic IP** — static public IP for EC2
+- 📡 **Monitoring** — Prometheus metrics + Grafana dashboards
+- 🚨 **CloudWatch Alarms** — email alerts when CPU > 80%
+- 🏗️ **IaC** — infrastructure as Terraform code
+- 🌐 **Elastic IP** — static public IP
 
 ---
 
@@ -78,11 +84,12 @@ Prometheus → Grafana
 | **Containerization** | Docker, Docker Compose |
 | **Image Registry** | AWS ECR |
 | **Orchestration** | AWS ECS Fargate |
-| **CI/CD** | GitHub Actions |
-| **Cloud** | AWS (ECS, ECR, RDS, ALB, VPC, IAM) |
+| **CI/CD** | GitHub Actions + pytest |
+| **Cloud** | AWS (ECS, ECR, RDS, ALB, VPC, IAM, WAF) |
 | **IaC** | Terraform |
 | **Monitoring** | Prometheus, Grafana |
-| **Security** | AWS Secrets Manager, VPC Endpoints |
+| **Security** | AWS Secrets Manager, VPC Endpoints, WAF |
+| **Alerting** | CloudWatch Alarms + SNS |
 
 ---
 
@@ -111,6 +118,7 @@ Docs: `http://localhost:8000/docs`
 
 VPC (devops-vpc) 10.0.0.0/16
 ├── Public Subnets (eu-central-1a/b/c)
+│   ├── AWS WAF
 │   ├── Application Load Balancer
 │   └── ECS Fargate (cryptotracker-service)
 └── Private Subnets (eu-central-1a/b/c)
@@ -129,6 +137,9 @@ VPC (devops-vpc) 10.0.0.0/16
 | **Elastic IP** | Static public IP |
 | **Secrets Manager** | Secure credentials storage |
 | **VPC Endpoints** | Private connectivity to AWS services |
+| **WAF** | DDoS, SQL injection, XSS protection |
+| **CloudWatch** | Monitoring and alerting |
+| **SNS** | Email notifications |
 
 ```bash
 cd terraform
@@ -154,26 +165,50 @@ Zero-downtime deployment
 
 ---
 
-## 🔒 Security
+## 🛡️ Security
 
-- **AWS Secrets Manager** — database credentials stored securely, never in code
-- **VPC Endpoints** — private connectivity to AWS services without internet:
+- **AWS WAF** — blocks DDoS, SQL injection, XSS attacks
+  - Core rule set
+  - Known bad inputs
+  - SQL database protection
+- **AWS Secrets Manager** — database credentials stored securely
+- **VPC Endpoints** — private connectivity without internet:
   - `secretsmanager` — secure secret retrieval
   - `ecr.api` / `ecr.dkr` — private ECR image pulling
   - `cloudwatch logs` — private log streaming
 - **IAM Roles** — least privilege access for ECS tasks
-- **Private Subnets** — RDS database not exposed to internet
+- **Private Subnets** — RDS not exposed to internet
 
 ---
 
-## 📊 Monitoring
+## 📈 Auto Scaling
+
+ECS Service automatically scales based on CPU utilization:
+
+CPU < 70%  → 1 task (minimum)
+CPU > 70%  → scales up to 5 tasks
+CPU drops  → scales back down
+
+- **Minimum tasks:** 1
+- **Maximum tasks:** 5
+- **Scale-out cooldown:** 60 seconds
+- **Scale-in cooldown:** 120 seconds
+
+---
+
+## 🚨 Monitoring & Alerting
 
 | Tool | Purpose | Port |
 |------|---------|------|
 | Prometheus | Metrics collection | 9090 |
 | Grafana | Visualization | 3000 |
+| CloudWatch | AWS metrics & alarms | - |
+| SNS | Email notifications | - |
 
-**Dashboards:**
+**CloudWatch Alarms:**
+- 🔴 CPU > 80% → email alert via SNS
+
+**Grafana Dashboards:**
 - 📈 Total HTTP Requests
 - ⏱ Average Response Time
 - 🚀 Requests per Second
@@ -184,7 +219,28 @@ docker compose -f monitoring-compose.yml up -d
 
 - Grafana: `http://EC2_IP:3000` (admin / admin123)
 - Prometheus: `http://EC2_IP:9090`
-- Metrics: `GET /metrics`
+
+---
+
+## 📸 Screenshots
+
+### Grafana Monitoring Dashboard
+![Grafana](grafana.png)
+
+### AWS WAF Protection
+![WAF](waf.png)
+
+### ECS Cluster
+![ECS Cluster](ecs-cluster.png)
+
+### ECS Auto Scaling
+![Auto Scaling](ecs-autoscaling.png)
+
+### CloudWatch Alarm
+![CloudWatch](cloudwatch-alarm.png)
+
+### ECR Images
+![ECR](ecr-images.png)
 
 ---
 
@@ -221,4 +277,5 @@ docker compose -f monitoring-compose.yml up -d
 GitHub: [@Ice1One](https://github.com/Ice1One)
 
 ---
+
 
