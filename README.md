@@ -15,6 +15,12 @@
 
 ---
 
+## 🎬 Live Demo
+
+![Demo](demo.gif)
+
+---
+
 ## 📌 Overview
 
 Crypto Price Tracker is a production-ready REST API that tracks real-time prices of top 20 cryptocurrencies using CoinGecko API. Built with a full DevOps pipeline — from local Docker development to AWS cloud deployment with ECS Fargate, Load Balancer, RDS PostgreSQL, Prometheus/Grafana monitoring, AWS WAF protection and Auto Scaling.
@@ -60,6 +66,83 @@ CoinGecko API (real-time prices)
 Prometheus → Grafana
 
 ---
+
+## 🚀 Features
+
+- 📈 **Real-time prices** — top 20 cryptocurrencies via CoinGecko API
+- 🔄 **Auto-update** — prices refresh every 5 minutes
+- 📊 **Price history** — stores historical data in PostgreSQL
+- 🐳 **Dockerized** — runs anywhere with Docker
+- ⚙️ **CI/CD** — auto build & deploy via GitHub Actions + pytest
+- ☁️ **ECS Fargate** — serverless container orchestration
+- 📈 **Auto Scaling** — 1 to 5 tasks based on CPU utilization
+- 🛡️ **AWS WAF** — protection from DDoS, SQL injection, XSS
+- 🔒 **Secrets Manager** — secure credentials storage
+- 📡 **Monitoring** — Prometheus metrics + Grafana dashboards
+- 🚨 **CloudWatch Alarms** — email alerts when CPU > 80%
+- 🏗️ **IaC** — infrastructure as Terraform code
+- 🌐 **Elastic IP** — static public IP
+
+---
+
+## 📡 API Endpoints
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| `GET` | `/` | API info |
+| `GET` | `/health` | Health check |
+| `GET` | `/metrics` | Prometheus metrics |
+| `GET` | `/prices` | All tracked coin prices |
+| `GET` | `/price/{coin_id}` | Single coin price |
+| `GET` | `/price/{coin_id}/history` | Price history (last 100) |
+| `POST` | `/track/{coin_id}` | Start tracking a coin |
+| `DELETE` | `/track/{coin_id}` | Stop tracking a coin |
+
+---
+
+## 💻 Tech Stack
+
+| Category | Technology |
+|----------|------------|
+| **Backend** | Python 3.12, FastAPI |
+| **Database** | PostgreSQL (AWS RDS) |
+| **ORM** | SQLAlchemy |
+| **Scheduler** | APScheduler |
+| **HTTP Client** | httpx |
+| **Containerization** | Docker, Docker Compose |
+| **Image Registry** | AWS ECR |
+| **Orchestration** | AWS ECS Fargate |
+| **CI/CD** | GitHub Actions + pytest |
+| **Cloud** | AWS (ECS, ECR, RDS, ALB, VPC, IAM, WAF) |
+| **IaC** | Terraform |
+| **Monitoring** | Prometheus, Grafana |
+| **Security** | AWS Secrets Manager, VPC Endpoints, WAF |
+| **Alerting** | CloudWatch Alarms + SNS |
+
+---
+
+## 🐳 Local Development
+
+```bash
+git clone https://github.com/Ice1One/cryptotracker.git
+cd cryptotracker
+docker-compose up -d
+```
+
+API: `http://localhost:8000`
+Docs: `http://localhost:8000/docs`
+
+---
+
+## 🔧 Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | PostgreSQL connection string or AWS Secrets Manager ARN |
+
+---
+
+## ☁️ AWS Infrastructure---
 
 ## 🚀 Features
 
@@ -194,6 +277,7 @@ ALB health check → /health
 Traffic routed to new container
 ↓
 Zero-downtime deployment
+
 
 ---
 
